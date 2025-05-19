@@ -1,20 +1,28 @@
 import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext.jsx';
-import { useNavigate } from 'react-router-dom'; // Import useNavigate
+import { useNavigate } from 'react-router-dom';
+import QuestionForm from '../components/Question/QuestionForm';
+
 
 const DashboardPage = () => {
   const { currentUser } = useAuth();
   const navigate = useNavigate(); // Hook for navigation
   const [newSessionId, setNewSessionId] = useState('');
   const [joinSessionId, setJoinSessionId] = useState('');
+  const [showQuestionForm, setShowQuestionForm] = useState(false);
+  const [questionData, setQuestionData] = useState(null);
+
 
   const handleCreateSession = () => {
-    // Generate a simple unique-ish ID for demo purposes
-    const id = newSessionId.trim() || `session-${Date.now().toString(36).slice(-6)}`;
-    if (id) {
-      navigate(`/session/${id}`);
+    if (showQuestionForm) {
+      setShowQuestionForm(true);
     } else {
+      const id = newSessionId.trim() || `session-${Date.now().toString(36).slice(-6)}`;
+      if (id) {
+        navigate(`/session/${id}`, { state: { questionData } });
+      } else {
         alert("Please enter a session name or leave blank for an auto-generated one.");
+      }
     }
   };
 
@@ -41,19 +49,40 @@ const DashboardPage = () => {
           {/* Create Session Card */}
           <div className="bg-gray-700/50 p-6 rounded-lg shadow-lg">
             <h2 className="text-xl font-semibold text-purple-300 mb-4">Start a New Session</h2>
-            <input
-              type="text"
-              value={newSessionId}
-              onChange={(e) => setNewSessionId(e.target.value)}
-              placeholder="Optional: Custom Session Name"
-              className="w-full p-2 mb-3 bg-gray-800 border border-gray-600 rounded-md focus:ring-purple-500 focus:border-purple-500"
-            />
-            <button
-              onClick={handleCreateSession}
-              className="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded-md transition-colors"
-            >
-              Create & Join Session
-            </button>
+            {!showQuestionForm ? (
+              <div className="space-y-4">
+                <input
+                  type="text"
+                  value={newSessionId}
+                  onChange={(e) => setNewSessionId(e.target.value)}
+                  placeholder="Optional: Custom Session Name"
+                  className="w-full p-2 mb-3 bg-gray-800 border border-gray-600 rounded-md focus:ring-purple-500 focus:border-purple-500"
+                />
+                <div className="grid grid-cols-2 gap-4">
+                  <button
+                    onClick={() => handleCreateSession()}
+                    className="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded-md transition-colors"
+                  >
+                    Create Simple Session
+                  </button>
+                  <button
+                    onClick={() => setShowQuestionForm(true)}
+                    className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-md transition-colors"
+                  >
+                    Add Question
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <QuestionForm
+                onSubmit={(data) => {
+                  setQuestionData(data);
+                  const id = newSessionId.trim() || `session-${Date.now().toString(36).slice(-6)}`;
+                  navigate(`/session/${id}`, { state: { questionData: data } });
+                }}
+                onCancel={() => setShowQuestionForm(false)}
+              />
+            )}
           </div>
 
           {/* Join Session Card */}

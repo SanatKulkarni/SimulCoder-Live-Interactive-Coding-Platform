@@ -120,13 +120,19 @@ async def websocket_editor_endpoint(websocket: WebSocket, session_id: str):
     await manager.connect(session_id, websocket)
     try:
         while True:
-            data = await websocket.receive_text()
-            # When code is received from a client, update and broadcast it
-            await manager.broadcast_code_update(session_id, data, websocket)
+            data = await websocket.receive_json()
+            if isinstance(data, dict) and data.get("type") == "question_update":
+                manager.session_questions[session_id] = data.get("question")
+                # Broadcast question update to all users in session
+                for conn in manager.active_connections[session_id]:
+                    if conn != websocket:
+                        await conn.send_json({"type": "question_update", "question": data.get("question")})
+            else:
+                # Handle code updates
+                code = data if isinstance(data, str) else data.get("code", "")
+                await manager.broadcast_code_update(session_id, code, websocket)
     except WebSocketDisconnect:
         manager.disconnect(session_id, websocket)
-        # Optionally, broadcast a "user left" message if needed
-        # await manager.broadcast_message(session_id, f"User left session {session_id}", websocket)
     except Exception as e:
         print(f"Error in WebSocket session {session_id}: {e}")
         manager.disconnect(session_id, websocket)

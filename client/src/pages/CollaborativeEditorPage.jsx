@@ -1,12 +1,16 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { useParams, Link, useLocation } from 'react-router-dom';
+import QuestionDisplay from '../components/Question/QuestionDisplay';
+import debounce from 'lodash/debounce';
 // Removed: import Editor from 'react-simple-code-editor';
 
 const CollaborativeEditorPage = () => {
   const { sessionId } = useParams();
+  const location = useLocation();
   const [code, setCode] = useState('');
   const ws = useRef(null);
   const [isConnected, setIsConnected] = useState(false);
+  const [questionData, setQuestionData] = useState(location.state?.questionData);
 
   useEffect(() => {
     if (!sessionId) return;
@@ -17,10 +21,24 @@ const CollaborativeEditorPage = () => {
     ws.current.onopen = () => {
       console.log('WebSocket Connected');
       setIsConnected(true);
+      if (location.state?.questionData) {
+        ws.current.send(JSON.stringify({
+          type: 'question_update',
+          question: location.state.questionData
+        }));
+      }
     };
 
     ws.current.onmessage = (event) => {
-      setCode(event.data);
+      const data = JSON.parse(event.data);
+      if (data.type === 'initial_state') {
+        setCode(data.code || '');
+        if (data.question) setQuestionData(data.question);
+      } else if (data.type === 'question_update') {
+        setQuestionData(data.question);
+      } else if (data.type === 'code_update') {
+        setCode(data.code);
+      }
     };
 
     ws.current.onclose = () => {
@@ -40,12 +58,23 @@ const CollaborativeEditorPage = () => {
     };
   }, [sessionId]);
 
-  const handleCodeChange = (event) => { // Changed to accept event for textarea
+  const sendCodeUpdate = useCallback(
+    debounce((code) => {
+      if (ws.current && ws.current.readyState === WebSocket.OPEN) {
+        ws.current.send(JSON.stringify({
+          type: 'code_update',
+          code: code,
+          session_id: sessionId
+        }));
+      }
+    }, 100),
+    [sessionId]
+  );
+
+  const handleCodeChange = (event) => {
     const newCode = event.target.value;
     setCode(newCode);
-    if (ws.current && ws.current.readyState === WebSocket.OPEN) {
-      ws.current.send(newCode);
-    }
+    sendCodeUpdate(newCode);
   };
 
   const copySessionLink = () => {
@@ -57,7 +86,7 @@ const CollaborativeEditorPage = () => {
   // Removed noOpHighlight function
 
   return (
-    <div className="min-h-screen bg-gray-900 text-gray-200 p-4 flex flex-col">
+    <div className="min-h-screen bg-gray-900 text-gray-200 p-4 flex flex-col overflow-hidden">
       <header className="mb-4 flex justify-between items-center">
         <div>
           <h1 className="text-2xl font-bold text-purple-400">
@@ -80,14 +109,26 @@ const CollaborativeEditorPage = () => {
         </div>
       </header>
 
-      <div className="flex-grow rounded-lg overflow-hidden shadow-2xl border border-gray-700 bg-gray-800">
-        <textarea
-          value={code}
-          onChange={handleCodeChange}
-          className="w-full h-full p-4 bg-gray-800 text-gray-200 font-mono text-sm focus:outline-none resize-none caret-purple-400"
-          placeholder="Start coding here..."
-          spellCheck="false" // Optional: disable spellcheck for code
-        />
+      <div className="flex-grow flex gap-4 overflow-hidden">
+        <div className="w-1/2 overflow-y-auto rounded-lg bg-gray-800 border border-gray-700 p-4">
+          {questionData ? (
+            <QuestionDisplay question={questionData} />
+          ) : (
+            <div className="text-gray-400 text-center mt-4">
+              No question assigned to this session
+            </div>
+          )}
+        </div>
+
+        <div className="w-1/2 rounded-lg overflow-hidden shadow-2xl border border-gray-700 bg-gray-800">
+          <textarea
+            value={code}
+            onChange={handleCodeChange}
+            className="w-full h-full p-4 bg-gray-800 text-gray-200 font-mono text-sm focus:outline-none resize-none caret-purple-400"
+            placeholder="Start coding here..."
+            spellCheck="false"
+          />
+        </div>
       </div>
       <footer className="mt-4 text-sm text-gray-500 text-center">
         Share the link to this page with others to collaborate in real-time.
