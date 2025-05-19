@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, Link, useLocation } from 'react-router-dom';
 import QuestionDisplay from '../components/Question/QuestionDisplay';
 import debounce from 'lodash/debounce';
-// Removed: import Editor from 'react-simple-code-editor';
+import Editor from '@monaco-editor/react';
 
 const CollaborativeEditorPage = () => {
   const { sessionId } = useParams();
@@ -121,12 +121,31 @@ const CollaborativeEditorPage = () => {
         </div>
 
         <div className="w-1/2 rounded-lg overflow-hidden shadow-2xl border border-gray-700 bg-gray-800">
-          <textarea
+          <Editor
+            height="100%"
+            defaultLanguage="python"
+            theme="vs-dark"
             value={code}
-            onChange={handleCodeChange}
-            className="w-full h-full p-4 bg-gray-800 text-gray-200 font-mono text-sm focus:outline-none resize-none caret-purple-400"
-            placeholder="Start coding here..."
-            spellCheck="false"
+            onChange={(value) => {
+              setCode(value);
+              sendCodeUpdate(value);
+            }}
+            options={{
+              minimap: { enabled: false },
+              fontSize: 14,
+              tabSize: 4,
+              insertSpaces: true,
+              autoIndent: 'full',
+              formatOnPaste: true,
+              formatOnType: true,
+              scrollBeyondLastLine: false,
+              readOnly: false,
+              wordWrap: 'on',
+              lineNumbers: 'on',
+              folding: true,
+              renderWhitespace: 'selection',
+              automaticLayout: true
+            }}
           />
         </div>
       </div>
