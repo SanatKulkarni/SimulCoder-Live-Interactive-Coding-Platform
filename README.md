@@ -8,7 +8,7 @@ SimulCoder is a web-based platform designed for real-time collaborative coding. 
 
 ---
 
-## ✨ Features
+## Features
 
 *   **Real-time Collaborative Editor:** Multiple users can type and see changes instantly in a shared Monaco Editor (VS Code-like experience).
 *   **User Authentication:** Secure registration and login system using JWT.
@@ -48,7 +48,7 @@ SimulCoder is a web-based platform designed for real-time collaborative coding. 
 
 ---
 
-## 🚀 Getting Started
+## Getting Started
 
 Follow these instructions to get a copy of the project up and running on your local machine for development and testing purposes.
 
@@ -123,7 +123,7 @@ Follow these instructions to get a copy of the project up and running on your lo
 
 ---
 
-## 📖 Usage
+## Usage
 
 1.  **Register/Login:** Create an account or log in if you already have one.
 2.  **Dashboard:**
@@ -142,7 +142,7 @@ Follow these instructions to get a copy of the project up and running on your lo
 
 ---
 
-## 🙏 Acknowledgements
+## Acknowledgements
 
 *   FastAPI
 *   React
